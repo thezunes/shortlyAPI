@@ -28,3 +28,32 @@ catch (err) {
 }
 
 }
+
+export async function signin (req,res) {
+
+const {email, password} = req.body;
+
+const user = await db.query(` SELECT * FROM users WHERE email=$1;`, [email])
+const token = uuid()
+
+
+if(user.rowCount === 0) return res.sendStatus(404)
+
+const correctPassword = bcrypt.compareSync(password, user.rows[0].password)
+
+if(!correctPassword) return res.sendStatus(404);
+
+try{
+
+    await db.query(`INSERT INTO sessions (userId,Token) VALUES ($1,$2);`, [user.rows[0].id, token])
+
+    res.status(200).send({ token: token })
+
+}
+
+catch(err) {
+
+res.status(500).send(err.message)
+}
+
+}
