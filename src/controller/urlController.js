@@ -11,6 +11,11 @@ export async function urlshorten(req,res){
     console.log(shortUrl)
     const id = user.rows[0].userid
 
+    const body = {
+        id: id,
+        shortUrl: shortUrl
+    }
+
     try{
         const rowCount= await db.query(`
         INSERT INTO "shorturls"
@@ -20,12 +25,33 @@ export async function urlshorten(req,res){
         ,[id, shortUrl, url]
     );
     
-        res.sendStatus(200)
+        res.status(201).send(body)
 
 }
    
     catch(err){
         console.log(err.message);
         res.sendStatus(404);
+    }
+}
+
+export async function shortUrl(req, res) {
+    const { id } = req.params
+    const shortUrl = await db.query(`SELECT * FROM "shorturls" WHERE userid=$1;`, [id])
+    const body = {
+        id: id,
+        shortUrl: shortUrl.rows[0].shorturl,
+        url: shortUrl.rows[0].url
+    }
+
+    try {
+
+        if (shortUrl.rowCount < 1) { return res.status(404).send("URL não existe")
+        }
+
+        res.status(200).send(body)
+
+    } catch (err) {
+        res.status(500).send(err.message)
     }
 }
