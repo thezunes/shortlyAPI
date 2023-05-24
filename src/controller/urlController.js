@@ -86,3 +86,31 @@ export async function openUrl(req,res){
         res.sendStatus(500);
     }
 }
+
+
+export async function dropShortUrl (req,res) {
+
+    const { id } = req.params
+    const { authorization } = req.headers
+    const token = authorization?.replace("Bearer ", "")
+
+    if(!authorization) return res.sendStatus(401);
+
+    try {
+
+        const user = await db.query(`SELECT * FROM sessions WHERE token=$1;`, [token])
+        const url = await db.query(`SELECT * FROM "shorturls" WHERE id=$1;`, [id])
+
+        console.log(url.rows[0].userid)
+        console.log(user.rows[0].id)
+
+        if (url.rowCount < 1) { return res.sendStatus(404) }
+        if (user.rows[0].userid !== url.rows[0].userid ) {return res.status(401).send("A Url não pertence ao usuário")}
+
+        await db.query(`DELETE FROM "shorturls" WHERE id=$1`, [id])
+        res.sendStatus(204) }
+
+    catch (err) {
+        res.status(500).send(err.message)
+    }
+}
