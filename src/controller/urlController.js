@@ -59,8 +59,30 @@ export async function shortUrl(req, res) {
     }
 }
 
-export async function openShort (req,res) {
+export async function openUrl(req,res){
 
+    const { shortUrl } = req.params
+    
+    if(!shortUrl) return res.status(404).send("shortUrl Inválido");
+    
+    try{
 
+        const verifyShortUrl = await db.query(`
+        SELECT url 
+        FROM "shorturls"
+        WHERE "shorturl"=$1`,[shortUrl])
+ 
+        if(verifyShortUrl.rowCount < 1) return res.sendStatus(404);
 
+        const {rowCount}= await db.query(`
+        UPDATE "shorturls"
+        SET "visitcount"="visitcount"+1
+        WHERE "shorturl"=$1`,[shortUrl]
+    );
+        res.redirect(`${verifyShortUrl.rows[0].url}`)
+        
+    }catch(err){
+        console.log(err.message);
+        res.sendStatus(500);
+    }
 }
