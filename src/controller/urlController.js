@@ -37,21 +37,30 @@ export async function urlshorten(req,res){
 
 export async function shortUrl(req, res) {
     const { id } = req.params
-    const shortUrl = await db.query(`SELECT * FROM "shorturls" WHERE userid=$1;`, [id])
+    const shortUrl = await db.query(`SELECT * FROM "shorturls" WHERE id=$1;`, [id])
     const body = {
         id: id,
         shortUrl: shortUrl.rows[0].shorturl,
         url: shortUrl.rows[0].url
+        
     }
+
+    if (shortUrl.rowCount < 1) { return res.status(404).send("URL não existe")
+        }
 
     try {
 
-        if (shortUrl.rowCount < 1) { return res.status(404).send("URL não existe")
-        }
+        
 
         res.status(200).send(body)
 
     } catch (err) {
         res.status(500).send(err.message)
     }
+}
+
+export async function openShort (req,res) {
+
+
+
 }
