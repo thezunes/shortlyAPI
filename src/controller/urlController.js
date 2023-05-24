@@ -114,3 +114,40 @@ export async function dropShortUrl (req,res) {
         res.status(500).send(err.message)
     }
 }
+
+export async function userUrls(req, res) {
+    const { authorization } = req.headers;
+    const token = authorization?.replace("Bearer ", "");
+
+    const user = await db.query(`SELECT userid FROM sessions WHERE token=$1;`, [token]);
+    const userId = user.rows[0].userid;
+
+    try {
+        const userData = await db.query(`
+            SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'visitcount', (SELECT COALESCE(SUM(s.visitcount), 0) FROM "shorturls" s WHERE s.userid::integer = u.id),
+                'shortenedUrls', (
+                    SELECT JSON_AGG(json_build_object(
+                        'id', s.id,
+                        'shortUrl', s.shorturl,
+                        'url', s.url,
+                        'visitCount', s.visitcount
+                    ))
+                    FROM "shorturls" s
+                    WHERE s.userid::integer = u.id
+                )
+            ) AS result
+            FROM users u
+            WHERE u.id::integer = $1;
+        `, [userId]);
+
+        res.status(200).send(userData.rows[0]);
+
+    } catch (err) {
+        console.log(err.message);
+        res.sendStatus(500);
+    }
+}
+    
