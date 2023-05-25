@@ -151,3 +151,32 @@ export async function userUrls(req, res) {
     }
 }
     
+export async function ranking(req, res) {
+
+try{
+
+
+    const getRanking = await db.query(`
+  SELECT
+    users.id,
+    users.name,
+    COUNT(shorturls.shorturl) AS "linksCount",
+    SUM(COALESCE(shorturls.visitcount, 0)) AS "visitCount"
+  FROM users
+    LEFT JOIN shorturls ON users.id = shorturls.userid::integer
+  GROUP BY users.id, users.name
+  ORDER BY "visitCount" DESC
+  LIMIT $1;
+`, [10]);
+
+res.status(201).send(getRanking.rows)
+
+}
+
+catch(err){
+
+res.status(500).send(err.message)
+
+}
+
+}
